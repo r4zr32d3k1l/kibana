@@ -61,9 +61,9 @@ describe('get_trigger_type_suggestions', () => {
     describe('basic functionality', () => {
       it('should return all trigger types when no prefix is provided', () => {
         const result = getTriggerTypeSuggestions('', mockRange);
-        expect(result).toHaveLength(3); // alert, scheduled, manual
+        expect(result).toHaveLength(4); // alert, scheduled, manual, webhook
         expect(result.map((s) => s.label)).toEqual(
-          expect.arrayContaining(['alert', 'scheduled', 'manual'])
+          expect.arrayContaining(['alert', 'scheduled', 'manual', 'webhook'])
         );
       });
 
@@ -108,7 +108,7 @@ describe('get_trigger_type_suggestions', () => {
         getTriggerTypeSuggestions('', mockRange);
 
         // Check that generateTriggerSnippet was called for each trigger type (with defaultCondition from trigger def)
-        expect(generateTriggerSnippet).toHaveBeenCalledTimes(3);
+        expect(generateTriggerSnippet).toHaveBeenCalledTimes(4);
         expect(generateTriggerSnippet).toHaveBeenCalledWith('alert', {
           defaultCondition: undefined,
         });
@@ -116,6 +116,9 @@ describe('get_trigger_type_suggestions', () => {
           defaultCondition: undefined,
         });
         expect(generateTriggerSnippet).toHaveBeenCalledWith('manual', {
+          defaultCondition: undefined,
+        });
+        expect(generateTriggerSnippet).toHaveBeenCalledWith('webhook', {
           defaultCondition: undefined,
         });
       });
@@ -183,7 +186,7 @@ describe('get_trigger_type_suggestions', () => {
 
       it('should set sortText so built-in triggers sort before event-driven, each group alphabetical', () => {
         const result = getTriggerTypeSuggestions('', mockRange);
-        const builtIn = ['alert', 'manual', 'scheduled'];
+        const builtIn = ['alert', 'manual', 'scheduled', 'webhook'];
         result.forEach((suggestion) => {
           const label =
             typeof suggestion.label === 'string' ? suggestion.label : suggestion.label.label;
@@ -222,12 +225,12 @@ describe('get_trigger_type_suggestions', () => {
     describe('edge cases', () => {
       it('should handle empty string prefix', () => {
         const result = getTriggerTypeSuggestions('', mockRange);
-        expect(result).toHaveLength(3);
+        expect(result).toHaveLength(4);
       });
 
       it('should handle whitespace prefix', () => {
         const result = getTriggerTypeSuggestions('  ', mockRange);
-        expect(result).toHaveLength(3); // whitespace doesn't match any trigger types
+        expect(result).toHaveLength(4); // whitespace doesn't match any trigger types
       });
 
       it('should handle special characters in prefix', () => {
@@ -249,7 +252,7 @@ describe('get_trigger_type_suggestions', () => {
           endColumn: 10,
         };
         const result = getTriggerTypeSuggestions('', sameRange);
-        expect(result).toHaveLength(3);
+        expect(result).toHaveLength(4);
         result.forEach((suggestion) => {
           expect((suggestion.range as monaco.IRange).endColumn).toBe(1000);
         });
@@ -260,7 +263,7 @@ describe('get_trigger_type_suggestions', () => {
   describe('getBuiltInTriggerTypesFromSchema', () => {
     it('should return array of trigger types extracted from schema', () => {
       const result = getBuiltInTriggerTypesFromSchema();
-      expect(result).toHaveLength(3);
+      expect(result).toHaveLength(4);
       expect(result).toEqual(
         expect.arrayContaining([
           {
@@ -277,6 +280,11 @@ describe('get_trigger_type_suggestions', () => {
             type: 'manual',
             description: 'Trigger workflow manually',
             icon: monaco.languages.CompletionItemKind.TypeParameter,
+          },
+          {
+            type: 'webhook',
+            description: 'Trigger workflow via an incoming HTTP request',
+            icon: monaco.languages.CompletionItemKind.Event,
           },
         ])
       );

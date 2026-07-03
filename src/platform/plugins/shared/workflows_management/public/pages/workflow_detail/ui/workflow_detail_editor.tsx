@@ -37,6 +37,7 @@ import {
 import { useContextOverrideData } from './use_context_override_data';
 import { useRunWorkflowWithConfirmation } from './use_run_workflow_with_confirmation';
 import { WorkflowDetailConnectorFlyout } from './workflow_detail_connector_flyout';
+import { WorkflowDetailWebhookFlyout } from './workflow_detail_webhook_flyout';
 import { WORKFLOWS_DOCUMENTATION_URL } from '../../../../common';
 import { useWorkflowActions } from '../../../entities/workflows/model/use_workflow_actions';
 import {
@@ -418,6 +419,7 @@ export const WorkflowDetailEditor = React.memo<WorkflowDetailEditorProps>(({ hig
       </EuiFlexGroup>
 
       <WorkflowDetailConnectorFlyout editorRef={editorRef} />
+      <WorkflowDetailWebhookFlyout />
       {runConfirmationModal}
     </ReactFlowProvider>
   );

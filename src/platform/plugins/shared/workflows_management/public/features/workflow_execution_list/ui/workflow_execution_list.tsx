@@ -155,6 +155,7 @@ export const WorkflowExecutionList = ({
                   isTestRun={execution.isTestRun}
                   startedAt={toValidDate(execution.startedAt)}
                   duration={execution.duration}
+                  reason={execution.error?.message ?? undefined}
                   executedBy={execution.executedBy}
                   triggeredBy={execution.triggeredBy}
                   showExecutor={showExecutor}

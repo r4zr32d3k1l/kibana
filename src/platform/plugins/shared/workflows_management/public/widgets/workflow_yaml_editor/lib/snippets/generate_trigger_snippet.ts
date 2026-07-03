@@ -79,6 +79,22 @@ export function generateTriggerSnippet(
       parameters = {};
       break;
 
+    case 'webhook':
+      // Scaffold auth + declared inputs so the setup flyout has something to reflect.
+      parameters = {
+        auth: {
+          type: 'basic',
+          username: 'user',
+          password: 'password',
+        },
+        inputs: {
+          properties: {
+            message: { type: 'string' },
+          },
+        },
+      };
+      break;
+
     default:
       // Custom triggers: include on/condition so users can add a KQL filter (use defaultCondition when provided)
       parameters = {

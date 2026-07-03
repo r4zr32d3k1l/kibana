@@ -14,6 +14,7 @@ import type { LineColumnPosition } from '../../../entities/workflows/store';
 import {
   openCreateConnectorFlyout,
   openEditConnectorFlyout,
+  openWebhookFlyout,
 } from '../../../entities/workflows/store';
 
 // Hook to register hover command actions
@@ -43,6 +44,9 @@ export function useRegisterHoverCommands() {
           dispatch(openEditConnectorFlyout({ connectorType, connectorIdToEdit: connectorId }));
         }
       ),
+      monaco.editor.registerCommand('workflows.editor.action.configureWebhook', () => {
+        dispatch(openWebhookFlyout());
+      }),
     ];
   }, [unregisterHoverCommands, dispatch]);
 

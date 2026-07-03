@@ -81,8 +81,13 @@ describe('getActionOptions', () => {
 
     expect(triggersGroup).toBeDefined();
     if (triggersGroup && 'options' in triggersGroup) {
-      expect(triggersGroup.options).toHaveLength(3);
-      expect(triggersGroup.options.map((opt) => opt.id)).toEqual(['manual', 'alert', 'scheduled']);
+      expect(triggersGroup.options).toHaveLength(4);
+      expect(triggersGroup.options.map((opt) => opt.id)).toEqual([
+        'manual',
+        'alert',
+        'scheduled',
+        'webhook',
+      ]);
     }
   });
 
@@ -100,7 +105,7 @@ describe('getActionOptions', () => {
 
     expect(triggersGroup).toBeDefined();
     if (triggersGroup && isActionGroup(triggersGroup)) {
-      const builtInCount = 3;
+      const builtInCount = 4;
       expect(triggersGroup.options).toHaveLength(builtInCount + 1);
       const casesOption = triggersGroup.options.find((opt) => opt.id === 'cases.updated');
       expect(casesOption).toBeDefined();
