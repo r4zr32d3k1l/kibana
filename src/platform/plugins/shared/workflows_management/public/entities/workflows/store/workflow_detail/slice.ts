@@ -56,6 +56,9 @@ const initialState: WorkflowDetailState = {
     connectorIdToEdit: undefined,
     insertPosition: undefined,
   },
+  webhookFlyout: {
+    isOpen: false,
+  },
 };
 
 // Slice
@@ -155,6 +158,14 @@ const workflowDetailSlice = createSlice({
       state.connectorFlyout = { isOpen: false }; // connectorType, connectorToEdit, and insertPosition are undefined
     },
 
+    // Webhook trigger setup flyout actions
+    openWebhookFlyout: (state) => {
+      state.webhookFlyout = { isOpen: true };
+    },
+    closeWebhookFlyout: (state) => {
+      state.webhookFlyout = { isOpen: false };
+    },
+
     // Internal actions - these are not for components usage
     _setComputedDataInternal: (state, action: { payload: ComputedData }) => {
       state.computed = action.payload;
@@ -210,6 +221,8 @@ export const {
   openCreateConnectorFlyout,
   openEditConnectorFlyout,
   closeConnectorFlyout,
+  openWebhookFlyout,
+  closeWebhookFlyout,
 
   // Internal action creators for middleware use only
   _setComputedDataInternal,

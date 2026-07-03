@@ -31,6 +31,7 @@ import type { z } from '@kbn/zod/v4';
 import { ActionsMenuButton } from './actions_menu_button';
 import {
   useAlertTriggerDecorations,
+  useWebhookTriggerDecorations,
   useConnectorTypeDecorations,
   useFocusedStepDecoration,
   useLineDifferencesDecorations,
@@ -547,6 +548,13 @@ export const WorkflowYAMLEditor = ({
   });
 
   useAlertTriggerDecorations({
+    editor: editorRef.current,
+    yamlDocument: yamlDocument || null,
+    isEditorMounted,
+    readOnly: isReadOnlyYaml,
+  });
+
+  useWebhookTriggerDecorations({
     editor: editorRef.current,
     yamlDocument: yamlDocument || null,
     isEditorMounted,

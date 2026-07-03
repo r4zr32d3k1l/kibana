@@ -71,6 +71,10 @@ export interface WorkflowDetailState {
     /** Position in Monaco editor where the flyout was opened from (for inserting connector ID) */
     insertPosition?: LineColumnPosition;
   };
+  /** Webhook trigger setup flyout state (opened from the webhook glyph in the YAML editor) */
+  webhookFlyout: {
+    isOpen: boolean;
+  };
 }
 
 export type ActiveTab = 'workflow' | 'executions';

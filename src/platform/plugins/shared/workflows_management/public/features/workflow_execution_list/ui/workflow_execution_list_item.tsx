@@ -9,7 +9,6 @@
 
 import type { EuiThemeComputed, UseEuiTheme } from '@elastic/eui';
 import {
-  EuiAvatar,
   EuiBadge,
   EuiFlexGroup,
   EuiFlexItem,
@@ -32,20 +31,50 @@ import { FormattedRelativeEnhanced } from '../../../shared/ui/formatted_relative
 import { getExecutionStatusColors, getExecutionStatusIcon } from '../../../shared/ui/status_badge';
 import { useGetFormattedDateTime } from '../../../shared/ui/use_formatted_date';
 
+/**
+ * `'rejected'` is a display-only status (not part of the core ExecutionStatus
+ * enum) for pre-run rejections like invalid credentials or missing required
+ * inputs. It renders with an amber icon/pill.
+ */
+export type DisplayExecutionStatus = ExecutionStatus | 'rejected';
+
 export const getExecutionTitleColor = (
   euiTheme: EuiThemeComputed,
-  status: ExecutionStatus
+  status: DisplayExecutionStatus
 ): string | undefined => {
-  if (status === ExecutionStatus.FAILED || status === ExecutionStatus.CANCELLED) {
+  if (
+    status === ExecutionStatus.FAILED ||
+    status === ExecutionStatus.CANCELLED ||
+    status === ExecutionStatus.TIMED_OUT
+  ) {
     return getExecutionStatusColors(euiTheme, status).color;
   }
 };
 
+/** Icon + label + pill colors for a display status (handles the extra 'rejected'). */
+const getDisplayStatusIcon = (euiTheme: EuiThemeComputed, status: DisplayExecutionStatus) => {
+  if (status === 'rejected') {
+    return <EuiIcon type="errorFill" color={euiTheme.colors.warning} aria-hidden={true} />;
+  }
+  return getExecutionStatusIcon(euiTheme, status);
+};
+
+const getDisplayStatusLabel = (status: DisplayExecutionStatus): string => {
+  if (status === 'rejected') {
+    return i18n.translate('workflows.workflowExecutionListItem.rejectedStatus', {
+      defaultMessage: 'Rejected',
+    });
+  }
+  return getStatusLabel(status);
+};
+
 interface WorkflowExecutionListItemProps {
-  status: ExecutionStatus;
+  status: DisplayExecutionStatus;
   isTestRun: boolean;
   startedAt: Date | null;
   duration: number | null;
+  /** Short reason shown as a pill next to the status (sourced from the execution error). */
+  reason?: string;
   executedBy?: string;
   triggeredBy?: string;
   showExecutor?: boolean;
@@ -58,8 +87,8 @@ export const WorkflowExecutionListItem = React.memo<WorkflowExecutionListItemPro
     isTestRun,
     startedAt,
     duration,
+    reason,
     executedBy,
-    triggeredBy,
     showExecutor = false,
     selected,
     onClick,
@@ -99,16 +128,42 @@ export const WorkflowExecutionListItem = React.memo<WorkflowExecutionListItemPro
           justifyContent="flexStart"
           responsive={false}
         >
-          <EuiFlexItem grow={false}>{getExecutionStatusIcon(euiTheme, status)}</EuiFlexItem>
+          <EuiFlexItem grow={false}>{getDisplayStatusIcon(euiTheme, status)}</EuiFlexItem>
           <EuiFlexItem>
             <EuiFlexGroup direction="column" gutterSize="xs">
               <EuiFlexItem>
-                <EuiText
-                  size="s"
-                  css={{ fontWeight: 'bold', color: getExecutionTitleColor(euiTheme, status) }}
-                >
-                  {getStatusLabel(status)}
-                </EuiText>
+                <EuiFlexGroup gutterSize="s" alignItems="center" responsive={false} wrap={false}>
+                  <EuiFlexItem grow={false}>
+                    <EuiText
+                      size="s"
+                      css={{
+                        fontWeight: 'bold',
+                        color: getExecutionTitleColor(euiTheme, status),
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {getDisplayStatusLabel(status)}
+                    </EuiText>
+                  </EuiFlexItem>
+                  {reason && (
+                    <>
+                      <EuiFlexItem grow={false}>
+                        <EuiText size="xs" color="subdued" aria-hidden={true}>
+                          {'·'}
+                        </EuiText>
+                      </EuiFlexItem>
+                      <EuiFlexItem grow={false} css={{ minWidth: 0 }}>
+                        <EuiBadge
+                          color={status === 'rejected' ? 'warning' : 'danger'}
+                          title={reason}
+                          css={{ maxWidth: '100%' }}
+                        >
+                          {reason}
+                        </EuiBadge>
+                      </EuiFlexItem>
+                    </>
+                  )}
+                </EuiFlexGroup>
               </EuiFlexItem>
               <EuiFlexItem>
                 {startedAt ? (
@@ -129,7 +184,7 @@ export const WorkflowExecutionListItem = React.memo<WorkflowExecutionListItemPro
             </EuiFlexGroup>
           </EuiFlexItem>
           <EuiFlexItem grow={false} css={styles.metadataContainer}>
-            <EuiFlexGroup alignItems="center" justifyContent="flexEnd" gutterSize="xs" wrap={false}>
+            <EuiFlexGroup alignItems="center" justifyContent="flexEnd" gutterSize="m" wrap={false}>
               {status === ExecutionStatus.WAITING_FOR_INPUT && (
                 <EuiFlexItem grow={false}>
                   <EuiBadge color="warning" data-test-subj="actionRequiredBadge">
@@ -139,40 +194,39 @@ export const WorkflowExecutionListItem = React.memo<WorkflowExecutionListItemPro
                   </EuiBadge>
                 </EuiFlexItem>
               )}
-              {isTestRun && (
+              {showExecutor && executedBy && (
                 <EuiFlexItem grow={false}>
                   <EuiIconTip
-                    type="flask"
-                    color={euiTheme.colors.backgroundFilledText}
-                    title={i18n.translate('workflows.workflowExecutionListItem.testRunIconTitle', {
-                      defaultMessage: 'Test Run',
+                    type="user"
+                    color="subdued"
+                    content={i18n.translate('workflows.workflowExecutionListItem.runByIconTitle', {
+                      defaultMessage: 'Run by {name}',
+                      values: { name: executedBy },
                     })}
                   />
                 </EuiFlexItem>
               )}
-              {showExecutor && (
-                <EuiFlexItem grow={false} css={styles.executedByContainer}>
-                  {executedBy && (
-                    <EuiFlexGroup
-                      alignItems="center"
-                      justifyContent="flexEnd"
-                      gutterSize="xs"
-                      wrap={false}
-                    >
-                      <EuiFlexItem grow={false}>
-                        <EuiAvatar name={executedBy} size="s" />
-                      </EuiFlexItem>
-                      <EuiFlexItem grow={false}>
-                        <EuiText size="xs" color="subdued">
-                          {executedBy}
-                        </EuiText>
-                      </EuiFlexItem>
-                    </EuiFlexGroup>
-                  )}
+              {isTestRun && (
+                <EuiFlexItem grow={false}>
+                  <EuiIconTip
+                    type="flask"
+                    color="subdued"
+                    content={i18n.translate(
+                      'workflows.workflowExecutionListItem.testRunIconTitle',
+                      {
+                        defaultMessage: 'Test run',
+                      }
+                    )}
+                  />
                 </EuiFlexItem>
               )}
-              <EuiFlexItem grow={false} css={styles.durationContainer}>
-                {formattedDuration && (
+              {((showExecutor && executedBy) || isTestRun) && formattedDuration && (
+                <EuiFlexItem grow={false}>
+                  <span css={styles.separator} />
+                </EuiFlexItem>
+              )}
+              {formattedDuration && (
+                <EuiFlexItem grow={false} css={styles.durationContainer}>
                   <EuiFlexGroup
                     alignItems="center"
                     justifyContent="flexEnd"
@@ -188,8 +242,13 @@ export const WorkflowExecutionListItem = React.memo<WorkflowExecutionListItemPro
                       </EuiText>
                     </EuiFlexItem>
                   </EuiFlexGroup>
-                )}
-              </EuiFlexItem>
+                </EuiFlexItem>
+              )}
+              {onClick && (
+                <EuiFlexItem grow={false}>
+                  <EuiIcon type="arrowRight" color="subdued" aria-hidden={true} />
+                </EuiFlexItem>
+              )}
             </EuiFlexGroup>
           </EuiFlexItem>
         </EuiFlexGroup>
@@ -216,12 +275,15 @@ const componentStyles = {
   metadataContainer: css({
     minWidth: '200px',
   }),
-  executedByContainer: css({
-    minWidth: '80px',
-    justifyContent: 'flex-end',
-  }),
   durationContainer: css({
     minWidth: '70px',
     justifyContent: 'flex-end',
   }),
+  separator: ({ euiTheme }: UseEuiTheme) =>
+    css({
+      display: 'inline-block',
+      width: '1px',
+      height: euiTheme.size.base,
+      backgroundColor: euiTheme.colors.borderBaseSubdued,
+    }),
 };

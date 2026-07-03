@@ -7,7 +7,7 @@
  * License v3.0 only", or the "Server Side Public License, v 1".
  */
 
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import React from 'react';
 import { ExecutionStatus } from '@kbn/workflows';
 import { WorkflowExecutionListItem } from './workflow_execution_list_item';
@@ -31,30 +31,38 @@ const defaultProps = {
 
 describe('WorkflowExecutionListItem', () => {
   describe('showExecutor feature flag', () => {
-    it('should not render executor when showExecutor is false (default)', () => {
-      render(<WorkflowExecutionListItem {...defaultProps} />);
+    // The executor is rendered as a user icon with the name in a tooltip.
+    const executorIcon = (container: HTMLElement) =>
+      container.querySelector('[data-euiicon-type="user"]');
 
-      expect(screen.queryByText('tal')).not.toBeInTheDocument();
+    it('should not render executor when showExecutor is false (default)', () => {
+      const { container } = render(<WorkflowExecutionListItem {...defaultProps} />);
+
+      expect(executorIcon(container)).not.toBeInTheDocument();
     });
 
     it('should not render executor when showExecutor is explicitly false', () => {
-      render(<WorkflowExecutionListItem {...defaultProps} showExecutor={false} />);
+      const { container } = render(
+        <WorkflowExecutionListItem {...defaultProps} showExecutor={false} />
+      );
 
-      expect(screen.queryByText('tal')).not.toBeInTheDocument();
+      expect(executorIcon(container)).not.toBeInTheDocument();
     });
 
     it('should render executor when showExecutor is true', () => {
-      render(<WorkflowExecutionListItem {...defaultProps} showExecutor={true} />);
+      const { container } = render(
+        <WorkflowExecutionListItem {...defaultProps} showExecutor={true} />
+      );
 
-      expect(screen.getByText('tal')).toBeInTheDocument();
+      expect(executorIcon(container)).toBeInTheDocument();
     });
 
     it('should not render executor when showExecutor is true but executedBy is undefined', () => {
-      render(
+      const { container } = render(
         <WorkflowExecutionListItem {...defaultProps} executedBy={undefined} showExecutor={true} />
       );
 
-      expect(screen.queryByText('tal')).not.toBeInTheDocument();
+      expect(executorIcon(container)).not.toBeInTheDocument();
     });
   });
 });

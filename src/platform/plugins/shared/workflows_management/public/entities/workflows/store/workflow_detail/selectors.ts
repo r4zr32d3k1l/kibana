@@ -204,3 +204,9 @@ export const selectConnectorFlyoutInsertPosition = createSelector(
   selectConnectorFlyout,
   (flyout) => flyout.insertPosition
 );
+
+export const selectWebhookFlyout = createSelector(selectDetail, (detail) => detail.webhookFlyout);
+export const selectIsWebhookFlyoutOpen = createSelector(
+  selectWebhookFlyout,
+  (flyout) => flyout.isOpen
+);

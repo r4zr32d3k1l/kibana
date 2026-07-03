@@ -57,6 +57,17 @@ export function getActionOptions(
       iconType: 'clock',
       iconColor: euiTheme.colors.textParagraph,
     },
+    {
+      id: 'webhook',
+      label: i18n.translate('workflows.actionsMenu.webhook', {
+        defaultMessage: 'Webhook',
+      }),
+      description: i18n.translate('workflows.actionsMenu.webhookDescription', {
+        defaultMessage: 'Trigger - On an incoming HTTP request',
+      }),
+      iconType: 'logoWebhook',
+      iconColor: euiTheme.colors.vis.euiColorVis6,
+    },
   ];
   const registeredTriggerOptions: ActionOptionData[] = triggerSchemas
     .getTriggerDefinitions()
