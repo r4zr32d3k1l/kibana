@@ -13,8 +13,8 @@ import { createTestEsCluster } from '@kbn/test';
 import { FLAGS } from '../src/constants';
 import { ChangeHistoryClient } from '..';
 import { DATA_STREAM_NAME } from '../src/client';
-import type { ChangeHistoryDocument, ObjectChange } from '..';
-import { sha256 } from '../src/utils';
+import type { ObjectChange } from '..';
+import { sha256, REDACTED } from '../src/utils';
 
 const KIBANA_SPACE = 'default';
 const TEST_MODULE = 'test-module';
@@ -94,6 +94,17 @@ describe('ChangeHistoryClient', () => {
       expect(result.total).toBe(0);
       expect(result.items).toEqual([]);
     });
+
+    it('enrolls the data stream in DSL lifecycle without ILM or data_retention', async () => {
+      const esClient = esServer.getClient();
+      const client = new ChangeHistoryClient(defaultCostructorOpts);
+      await client.initialize(esClient);
+
+      const template = await esClient.indices.getIndexTemplate({ name: DATA_STREAM_NAME });
+      const indexTemplate = template.index_templates[0]?.index_template;
+      expect(indexTemplate?.template?.settings?.index?.lifecycle?.name).toBeUndefined();
+      expect(indexTemplate?.template?.lifecycle).toEqual({ enabled: true });
+    });
   });
 
   describe('error behavior', () => {
@@ -111,7 +122,7 @@ describe('ChangeHistoryClient', () => {
       const change: ObjectChange = {
         objectType: 'rule',
         objectId: 'id-1',
-        after: { name: 'Rule 1' },
+        snapshot: { name: 'Rule 1' },
       };
       await expect(() =>
         client.log(change, { ...defaultLogOpts, spaceId: 'default' })
@@ -141,15 +152,15 @@ describe('ChangeHistoryClient', () => {
         objectType: 'rule',
         objectId: 'id-1',
         sequence: 1,
-        after: { name: 'Rule 1', enabled: true },
+        snapshot: { name: 'Rule 1', enabled: true },
       };
-      const hash = sha256(JSON.stringify(change.after));
+      const hash = sha256(JSON.stringify(change.snapshot));
       await client.log(change, { ...defaultLogOpts, spaceId: 'default' });
 
       const result = await client.getHistory(KIBANA_SPACE, 'rule', 'id-1');
       expect(result.total).toBe(1);
       expect(result.items.length).toBe(1);
-      const doc = result.items[0] as ChangeHistoryDocument;
+      const doc = result.items[0];
       expect(doc).toMatchObject({
         '@timestamp': expect.any(String),
         ecs: { version: '9.3.0' },
@@ -175,6 +186,7 @@ describe('ChangeHistoryClient', () => {
           version: expect.any(String),
         },
       });
+      expect(doc).not.toHaveProperty('kibana');
     });
   });
 
@@ -189,19 +201,34 @@ describe('ChangeHistoryClient', () => {
     it('should log multiple changes and return them via getHistory with correct count and ordering', async () => {
       const timestamp = new Date(Date.now() - 1).toISOString();
       const changes: ObjectChange[] = [
-        { objectType: 'rule', objectId: 'id-a', after: { name: 'Rule A update 1' } },
-        { objectType: 'rule', objectId: 'id-c', after: { name: 'Rule C update 3' } },
-        { objectType: 'rule', objectId: 'id-b', after: { name: 'Rule B update 3' }, sequence: 3 }, // <-- higher sequence, happened later
-        { objectType: 'rule', objectId: 'id-a', after: { name: 'Rule A update 2' } },
+        { objectType: 'rule', objectId: 'id-a', snapshot: { name: 'Rule A update 1' } },
+        { objectType: 'rule', objectId: 'id-c', snapshot: { name: 'Rule C update 3' } },
+        {
+          objectType: 'rule',
+          objectId: 'id-b',
+          snapshot: { name: 'Rule B update 3' },
+          sequence: 3,
+        }, // <-- higher sequence, happened later
+        { objectType: 'rule', objectId: 'id-a', snapshot: { name: 'Rule A update 2' } },
       ];
       await client.logBulk(changes, { ...defaultLogOpts, spaceId: 'default' });
       const changes2: ObjectChange[] = [
-        { objectType: 'rule', objectId: 'id-a', after: { name: 'Rule A update 3' } },
-        { objectType: 'rule', objectId: 'id-c', after: { name: 'Rule C update 1' }, timestamp }, // <-- older timestamp, happened first
-        { objectType: 'rule', objectId: 'id-b', after: { name: 'Rule B update 1' }, sequence: 1 },
-        { objectType: 'rule', objectId: 'id-b', after: { name: 'Rule B update 2' }, sequence: 2 },
-        { objectType: 'rule', objectId: 'id-c', after: { name: 'Rule C update 2' }, timestamp }, // <-- older timestamp, happened first
-        { objectType: 'rule', objectId: 'id-c', after: { name: 'Rule C update 4' } },
+        { objectType: 'rule', objectId: 'id-a', snapshot: { name: 'Rule A update 3' } },
+        { objectType: 'rule', objectId: 'id-c', snapshot: { name: 'Rule C update 1' }, timestamp }, // <-- older timestamp, happened first
+        {
+          objectType: 'rule',
+          objectId: 'id-b',
+          snapshot: { name: 'Rule B update 1' },
+          sequence: 1,
+        },
+        {
+          objectType: 'rule',
+          objectId: 'id-b',
+          snapshot: { name: 'Rule B update 2' },
+          sequence: 2,
+        },
+        { objectType: 'rule', objectId: 'id-c', snapshot: { name: 'Rule C update 2' }, timestamp }, // <-- older timestamp, happened first
+        { objectType: 'rule', objectId: 'id-c', snapshot: { name: 'Rule C update 4' } },
       ];
       await client.logBulk(changes2, { ...defaultLogOpts, spaceId: 'default' });
 
@@ -255,25 +282,25 @@ describe('ChangeHistoryClient', () => {
         {
           objectType: 'rule',
           objectId: 'rule-id',
-          after: { name: 'First Rule' },
+          snapshot: { name: 'First Rule' },
         },
         {
           objectType: 'rule',
           objectId: 'rule-id',
-          after: { name: 'Unindexable — bad sequence type' },
+          snapshot: { name: 'Unindexable — bad sequence type' },
           // Intentionally wrong runtime type for ES (integration test only).
           sequence: 'not-an-integer' as unknown as number,
         },
         {
           objectType: 'rule',
           objectId: 'rule-id',
-          after: { name: 'Also unindexable — bad sequence type' },
+          snapshot: { name: 'Also unindexable — bad sequence type' },
           sequence: {} as unknown as number,
         },
         {
           objectType: 'rule',
           objectId: 'rule-id',
-          after: { name: 'Last Rule' },
+          snapshot: { name: 'Last Rule' },
         },
       ];
       await expect(
@@ -288,9 +315,7 @@ describe('ChangeHistoryClient', () => {
     });
   });
 
-  // TODO: Add test for checking kibana space behavior in @kbn-change-history (underneath the hood)
-
-  describe('before/after diff', () => {
+  describe('masking selected fields', () => {
     let client: ChangeHistoryClient;
 
     beforeEach(async () => {
@@ -298,77 +323,47 @@ describe('ChangeHistoryClient', () => {
       await client.initialize(esServer.getClient());
     });
 
-    it('should populate object.diff when "before" is provided', async () => {
-      const change: ObjectChange = {
-        objectType: 'rule',
-        objectId: 'diff-id',
-        before: { name: 'Old name', enabled: true, status: 'draft' },
-        after: { name: 'New name', enabled: true, status: 'published' },
-      };
-      await client.log(change, {
-        ...defaultLogOpts,
-        spaceId: 'default',
-        fieldsToIgnore: { status: true },
-      });
-
-      const result = await client.getHistory(KIBANA_SPACE, 'rule', 'diff-id');
-      expect(result.total).toBe(1);
-      const doc = result.items[0] as ChangeHistoryDocument;
-      expect(doc.object.diff).toEqual({
-        type: 'default',
-        fields: ['name'],
-        before: { name: 'Old name' },
-      });
-      expect(doc.object.snapshot).toEqual(change.after);
-    });
-  });
-
-  describe('hashing selected fields', () => {
-    let client: ChangeHistoryClient;
-
-    beforeEach(async () => {
-      client = new ChangeHistoryClient(defaultCostructorOpts);
-      await client.initialize(esServer.getClient());
-    });
-
-    it('should hash sensitive fields in snapshot and list paths in object.fields.hashed', async () => {
+    it('should hash and redact sensitive fields and list paths in object.fields', async () => {
       const change: ObjectChange = {
         objectType: 'rule',
         objectId: 'masked-id',
-        after: {
+        snapshot: {
           name: 'My Rule',
-          user: { email: 'secret@example.com', name: 'Alice' },
+          user: { name: 'Alice' },
           apiKey: 'sk-secret-key-12345',
         },
       };
       const fieldsToHash = {
-        user: { email: true },
         apiKey: true,
+      };
+      const fieldsToRedact = {
+        user: { name: true },
       };
       await client.log(change, {
         ...defaultLogOpts,
         spaceId: 'default',
         fieldsToHash,
+        fieldsToRedact,
       });
 
       const result = await client.getHistory(KIBANA_SPACE, 'rule', 'masked-id');
       expect(result.total).toBe(1);
-      const doc = result.items[0] as ChangeHistoryDocument;
+      const doc = result.items[0];
 
       // Check hash
-      const hash = sha256(JSON.stringify(change.after));
+      const hash = sha256(JSON.stringify(change.snapshot));
       expect(doc.object.hash).toEqual(hash);
 
-      // Check hashed field paths
-      expect(doc.object.fields.hashed.sort()).toEqual(['apiKey', 'user.email'].sort());
+      // Check hashed and redacted field paths
+      expect(doc.object.fields.hashed).toEqual(['apiKey']);
+      expect(doc.object.fields.redacted).toEqual(['user.name']);
       const snapshot = doc.object.snapshot as Record<string, unknown>;
       expect(snapshot).toEqual({
         name: 'My Rule',
         user: {
-          email: sha256('secret@example.com'),
-          name: 'Alice',
+          name: REDACTED,
         },
-        apiKey: sha256('sk-secret-key-12345'),
+        apiKey: sha256('masked-id' + 'sk-secret-key-12345').slice(-12),
       });
     });
   });

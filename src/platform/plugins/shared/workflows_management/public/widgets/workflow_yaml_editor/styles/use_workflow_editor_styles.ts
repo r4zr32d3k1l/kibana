@@ -16,14 +16,6 @@ import { EDITOR_SCROLLBAR_WIDTH_PX, FOCUSED_STEP_DECORATION_INSET_PX } from './c
 export const EXECUTION_YAML_SNAPSHOT_CLASS = 'execution-yaml-snapshot';
 
 const editorStyleMap = {
-  actionsMenuPopoverPanel: ({ euiTheme }: UseEuiTheme) =>
-    css({
-      minInlineSize: '600px',
-      maxInlineSize: '600px',
-      maxBlockSize: '520px',
-      borderRadius: euiTheme.border.radius.medium,
-    }),
-
   container: ({ euiTheme }: UseEuiTheme) =>
     css({
       flex: 1,
@@ -94,6 +86,18 @@ const editorStyleMap = {
 
       // Alert trigger
       '.alert-trigger-glyph': {
+        '&:before': {
+          content: '""',
+          display: 'block',
+          width: '12px',
+          height: '12px',
+          backgroundColor: euiTheme.colors.warning,
+          borderRadius: '50%',
+        },
+      },
+
+      // Custom trigger `on.workflowEvents` (ignore / allow-all / avoid-loop)
+      '.workflow-trigger-on-chain-glyph': {
         '&:before': {
           content: '""',
           display: 'block',
@@ -180,6 +184,7 @@ const editorStyleMap = {
       minWidth: 0,
       overflowY: 'auto',
       minHeight: 0,
+      paddingLeft: euiTheme.size.xl,
       backgroundColor: euiTheme.colors.backgroundBaseSubdued,
       [`&.${EXECUTION_YAML_SNAPSHOT_CLASS}`]: {
         backgroundColor: euiTheme.colors.backgroundBasePlain,
@@ -217,7 +222,6 @@ const editorStyleMap = {
       right: euiThemeContext.euiTheme.size.m,
       zIndex: 10,
     }),
-  hiddenButtonCss: css({ display: 'none' }),
 };
 
 export const useWorkflowEditorStyles = () => {

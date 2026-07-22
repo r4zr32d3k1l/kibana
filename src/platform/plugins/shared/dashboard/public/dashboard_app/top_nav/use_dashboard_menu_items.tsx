@@ -7,6 +7,7 @@
  * License v3.0 only", or the "Server Side Public License, v 1".
  */
 
+import React from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { useCallback, useMemo, useState } from 'react';
 import useMountedState from 'react-use/lib/useMountedState';
@@ -14,6 +15,7 @@ import useMountedState from 'react-use/lib/useMountedState';
 import { useBatchedPublishingSubjects } from '@kbn/presentation-publishing';
 
 import useObservable from 'react-use/lib/useObservable';
+import { openLazyFlyout } from '@kbn/presentation-util';
 import type {
   AppMenuConfig,
   AppMenuItemType,
@@ -31,7 +33,7 @@ import { coreServices, shareService, dataService } from '../../services/kibana_s
 import { getDashboardCapabilities } from '../../utils/get_dashboard_capabilities';
 import { topNavStrings } from '../_dashboard_app_strings';
 import { ShowShareModal } from './share/show_share_modal';
-import { useDashboardAddItems } from './add_menu/use_dashboard_add_items';
+import { useShareOptions } from './share/use_share_options';
 
 export const useDashboardMenuItems = ({
   isLabsShown,
@@ -52,9 +54,8 @@ export const useDashboardMenuItems = ({
 
   const dashboardApi = useDashboardApi();
 
-  const [dashboardTitle, hasOverlays, hasUnsavedChanges, lastSavedId, viewMode, accessControl] =
+  const [hasOverlays, hasUnsavedChanges, lastSavedId, viewMode, accessControl] =
     useBatchedPublishingSubjects(
-      dashboardApi.title$,
       dashboardApi.hasOverlays$,
       dashboardApi.hasUnsavedChanges$,
       dashboardApi.savedObjectId$,
@@ -157,14 +158,25 @@ export const useDashboardMenuItems = ({
     }
   }, [quickSaveDashboard, dashboardInteractiveSave, lastSavedId]);
 
-  const addMenuItems = useDashboardAddItems({ dashboardApi });
+  const openAddPanelFlyout = useCallback(() => {
+    openLazyFlyout({
+      core: coreServices,
+      parentApi: dashboardApi,
+      loadContent: async ({ closeFlyout, ariaLabelledBy }) => {
+        const { AddPanelFlyout } = await import('./add_panel_button/components/add_panel_flyout');
 
-  const exportItems = useDashboardExportItems({
-    dashboardApi,
-    objectId: lastSavedId,
-    isDirty: Boolean(hasUnsavedChanges),
-    dashboardTitle,
-  });
+        return <AddPanelFlyout dashboardApi={dashboardApi} ariaLabelledBy={ariaLabelledBy} />;
+      },
+      flyoutProps: {
+        'data-test-subj': 'dashboardAddPanel',
+        triggerId: 'dashboardAddTopNavButton',
+      },
+    });
+  }, [dashboardApi]);
+
+  const shareOptions = useShareOptions();
+
+  const exportItems = useDashboardExportItems(shareOptions);
 
   const hasExportMenuItems = exportItems.length > 0;
 
@@ -173,9 +185,7 @@ export const useDashboardMenuItems = ({
    */
   const showShare = useCallback(() => {
     ShowShareModal({
-      dashboardTitle,
-      savedObjectId: lastSavedId,
-      isDirty: Boolean(hasUnsavedChanges) && viewMode === 'edit',
+      shareOptions,
       canSave: (canManageAccessControl || isInEditAccessMode) && Boolean(hasUnsavedChanges),
       accessControl,
       createdBy: dashboardApi.createdBy,
@@ -185,9 +195,7 @@ export const useDashboardMenuItems = ({
       changeAccessMode: dashboardApi.changeAccessMode,
     });
   }, [
-    dashboardTitle,
     hasUnsavedChanges,
-    lastSavedId,
     isInEditAccessMode,
     canManageAccessControl,
     accessControl,
@@ -196,7 +204,7 @@ export const useDashboardMenuItems = ({
     dashboardApi.createdBy,
     accessControlClient,
     dashboardApi.isManaged,
-    viewMode,
+    shareOptions,
   ]);
 
   const getEditTooltip = useCallback(() => {
@@ -337,8 +345,7 @@ export const useDashboardMenuItems = ({
         testId: 'dashboardAddTopNavButton',
         htmlId: 'dashboardAddTopNavButton',
         disableButton: disableTopNav,
-        popoverWidth: 200,
-        items: addMenuItems,
+        run: openAddPanelFlyout,
         order: 2,
       } as AppMenuItemType,
 
@@ -393,10 +400,8 @@ export const useDashboardMenuItems = ({
           ],
           isMainButtonLoading: isSaveInProgress,
           secondaryButtonAriaLabel: topNavStrings.saveMenu.label,
-          secondaryButtonIcon: 'chevronSingleDown',
-          secondaryButtonFill: true,
           isSecondaryButtonDisabled: isSaveInProgress,
-          notifcationIndicatorTooltipContent: topNavStrings.unsavedChangesTooltip,
+          notificationIndicatorTooltipContent: topNavStrings.unsavedChangesTooltip,
           showNotificationIndicator: hasUnsavedChanges,
         },
       } as AppMenuPrimaryActionItem,
@@ -428,7 +433,7 @@ export const useDashboardMenuItems = ({
     appId,
     isQuickSaveButtonDisabled,
     hasUnsavedChanges,
-    addMenuItems,
+    openAddPanelFlyout,
     resetChangesMenuItem,
     exportItems,
     viewMode,

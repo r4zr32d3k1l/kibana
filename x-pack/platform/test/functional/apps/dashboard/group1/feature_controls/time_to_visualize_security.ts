@@ -41,6 +41,11 @@ export default function ({ getPageObjects, getService }: FtrProviderContext) {
   const securityService = getService('security');
   const kbnServer = getService('kibanaServer');
 
+  /**
+   * Purpose: Verify lens and vis by-value work when user does not have library permissions
+   *
+   * Migration: Migrate to scout
+   */
   describe('dashboard time to visualize security', () => {
     before(async () => {
       await esArchiver.loadIfNeeded(
@@ -182,7 +187,7 @@ export default function ({ getPageObjects, getService }: FtrProviderContext) {
         await dashboard.clickNewDashboard();
         await dashboard.waitForRenderComplete();
 
-        await dashboardAddPanel.clickAddCustomVisualization();
+        await dashboardAddPanel.clickAddVega();
 
         await visualize.saveVisualizationAndReturn();
         const newPanelCount = await dashboard.getPanelCount();

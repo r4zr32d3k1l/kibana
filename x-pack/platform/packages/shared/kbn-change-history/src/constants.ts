@@ -8,7 +8,7 @@
 /**
  * Name of the datastream in elasticsearch
  */
-export const DATA_STREAM_NAME = '.kibana-change-history';
+export const DATA_STREAM_NAME = '.kibana_change_history';
 /**
  * Separator char. Used for scoping.
  */
@@ -28,5 +28,5 @@ export const DEFAULT_RESULT_SIZE = 100;
  * Remove this after General Availability
  * */
 export const FLAGS = {
-  FEATURE_ENABLED: false,
+  FEATURE_ENABLED: true,
 };

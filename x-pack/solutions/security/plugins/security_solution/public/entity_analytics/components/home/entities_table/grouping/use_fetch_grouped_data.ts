@@ -14,7 +14,12 @@ import { showErrorToast } from '@kbn/cloud-security-posture';
 import { useContext, useMemo } from 'react';
 import type { EntityType } from '../../../../../../common/entity_analytics/types';
 import { useKibana } from '../../../../../common/lib/kibana';
-import { ENTITY_FIELDS, QUERY_KEY_GROUPING_DATA, QUERY_KEY_ENTITY_ANALYTICS } from '../constants';
+import {
+  ENTITY_FIELDS,
+  QUERY_KEY_GROUPING_DATA,
+  QUERY_KEY_TARGET_METADATA,
+  QUERY_KEY_ENTITY_ANALYTICS,
+} from '../constants';
 import { DataViewContext } from '..';
 
 export type EntitiesGroupingQuery = GroupingQuery | SearchRequest;
@@ -26,12 +31,16 @@ export interface EntitiesGroupingAggregation {
   resolutionRiskScore?: {
     value: number | null;
   };
+  bucketRiskScore?: {
+    value: number | null;
+  };
 }
 
 export interface TargetEntityMetadata {
   name: string;
   type: EntityType;
   riskScore: number | null;
+  individualRiskScore: number | null;
 }
 
 export type TargetMetadataMap = Map<string, TargetEntityMetadata>;
@@ -43,6 +52,9 @@ interface TargetEntitySource {
     id?: string;
     name?: string;
     EngineMetadata?: { Type?: EntityType };
+    risk?: {
+      calculated_score_norm?: number;
+    };
     relationships?: {
       resolution?: {
         risk?: {
@@ -56,13 +68,14 @@ interface TargetEntitySource {
 export const parseTargetMetadataHits = (hits: Array<{ _source?: unknown }>): TargetMetadataMap => {
   const result: TargetMetadataMap = new Map();
   for (const hit of hits) {
-    const { id, name, EngineMetadata, relationships } =
+    const { id, name, EngineMetadata, risk, relationships } =
       (hit._source as TargetEntitySource)?.entity ?? {};
     const type = EngineMetadata?.Type;
     const riskScore = relationships?.resolution?.risk?.calculated_score_norm ?? null;
+    const individualRiskScore = risk?.calculated_score_norm ?? null;
 
     if (id && name && type) {
-      result.set(id, { name, type, riskScore });
+      result.set(id, { name, type, riskScore, individualRiskScore });
     }
   }
   return result;
@@ -74,6 +87,7 @@ export const getGroupedEntitiesQuery = (query: EntitiesGroupingQuery, indexPatte
   return {
     ...query,
     index: indexPattern,
+    project_routing: '_alias:_origin',
     ignore_unavailable: true,
     size: 0,
   };
@@ -128,8 +142,6 @@ export const useFetchGroupedData = ({
   );
 };
 
-const QUERY_KEY_TARGET_METADATA = 'entity-analytics-resolution-target-metadata';
-
 export const useFetchTargetMetadata = (entityIds: string[]): TargetMetadataMap => {
   const { searchService, toasts, indexPattern } = useEntitySearchParams();
 
@@ -142,12 +154,14 @@ export const useFetchTargetMetadata = (entityIds: string[]): TargetMetadataMap =
         searchService.search<{}, IKibanaSearchResponse<SearchResponse>>({
           params: {
             index: indexPattern,
+            project_routing: '_alias:_origin',
             ignore_unavailable: true,
             size: entityIds.length,
             _source: [
               ENTITY_FIELDS.ENTITY_ID,
               ENTITY_FIELDS.ENTITY_NAME,
               ENTITY_FIELDS.ENTITY_TYPE,
+              ENTITY_FIELDS.ENTITY_RISK,
               ENTITY_FIELDS.RESOLUTION_RISK_SCORE,
             ],
             query: {

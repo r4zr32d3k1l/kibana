@@ -28,12 +28,8 @@ describe('AlertEpisodeStatusBadges', () => {
       <AlertEpisodeStatusBadges
         status={ALERT_EPISODE_STATUS.ACTIVE}
         groupAction={{
-          groupHash: '1',
-          ruleId: '1',
           lastSnoozeAction: ALERT_EPISODE_ACTION_TYPE.SNOOZE,
-          lastDeactivateAction: null,
           snoozeExpiry: null,
-          tags: [],
         }}
       />
     );
@@ -46,12 +42,8 @@ describe('AlertEpisodeStatusBadges', () => {
       <AlertEpisodeStatusBadges
         status={ALERT_EPISODE_STATUS.ACTIVE}
         groupAction={{
-          groupHash: '1',
-          ruleId: '1',
           lastSnoozeAction: ALERT_EPISODE_ACTION_TYPE.SNOOZE,
-          lastDeactivateAction: null,
           snoozeExpiry: '2035-06-15T14:30:00.000Z',
-          tags: [],
         }}
       />
     );
@@ -67,12 +59,8 @@ describe('AlertEpisodeStatusBadges', () => {
       <AlertEpisodeStatusBadges
         status={ALERT_EPISODE_STATUS.ACTIVE}
         groupAction={{
-          groupHash: '1',
-          ruleId: '1',
           lastSnoozeAction: ALERT_EPISODE_ACTION_TYPE.SNOOZE,
-          lastDeactivateAction: null,
           snoozeExpiry: null,
-          tags: [],
         }}
       />
     );
@@ -89,6 +77,8 @@ describe('AlertEpisodeStatusBadges', () => {
           ruleId: '1',
           groupHash: '1',
           lastAckAction: ALERT_EPISODE_ACTION_TYPE.ACK,
+          lastAssigneeUid: null,
+          lastAckActor: null,
         }}
       />
     );
@@ -105,6 +95,8 @@ describe('AlertEpisodeStatusBadges', () => {
           ruleId: '1',
           groupHash: '1',
           lastAckAction: ALERT_EPISODE_ACTION_TYPE.ACK,
+          lastAssigneeUid: null,
+          lastAckActor: null,
         }}
       />
     );
@@ -112,20 +104,18 @@ describe('AlertEpisodeStatusBadges', () => {
     expect(await screen.findByRole('tooltip')).toHaveTextContent(/acknowledged/i);
   });
 
-  it('renders inactive badge when group action has deactivate', () => {
+  it.each([
+    [ALERT_EPISODE_STATUS.ACTIVE, 'Active'],
+    [ALERT_EPISODE_STATUS.INACTIVE, 'Inactive'],
+    [ALERT_EPISODE_STATUS.RECOVERING, 'Recovering'],
+    [ALERT_EPISODE_STATUS.PENDING, 'Pending'],
+  ] as const)('renders the %s status as-is from the `status` prop', (status, expectedLabel) => {
     renderWithI18n(
       <AlertEpisodeStatusBadges
-        status={ALERT_EPISODE_STATUS.ACTIVE}
-        groupAction={{
-          groupHash: '1',
-          ruleId: '1',
-          lastSnoozeAction: null,
-          lastDeactivateAction: ALERT_EPISODE_ACTION_TYPE.DEACTIVATE,
-          snoozeExpiry: null,
-          tags: [],
-        }}
+        status={status}
+        groupAction={{ lastSnoozeAction: null, snoozeExpiry: null }}
       />
     );
-    expect(screen.getByText('Inactive')).toBeInTheDocument();
+    expect(screen.getByText(expectedLabel)).toBeInTheDocument();
   });
 });

@@ -21,6 +21,7 @@ describe('caseTemplateSavedObjectType', () => {
         "dynamic": false,
         "properties": Object {
           "author": Object {
+            "ignore_above": 1024,
             "type": "keyword",
           },
           "definition": Object {
@@ -35,7 +36,28 @@ describe('caseTemplateSavedObjectType', () => {
           "fieldCount": Object {
             "type": "integer",
           },
+          "fieldDefinitions": Object {
+            "properties": Object {
+              "control": Object {
+                "ignore_above": 1024,
+                "type": "keyword",
+              },
+              "label": Object {
+                "type": "text",
+              },
+              "name": Object {
+                "ignore_above": 1024,
+                "type": "keyword",
+              },
+              "type": Object {
+                "ignore_above": 1024,
+                "type": "keyword",
+              },
+            },
+            "type": "nested",
+          },
           "fieldNames": Object {
+            "ignore_above": 1024,
             "type": "keyword",
           },
           "isDefault": Object {
@@ -50,16 +72,24 @@ describe('caseTemplateSavedObjectType', () => {
           "lastUsedAt": Object {
             "type": "date",
           },
+          "legacyKey": Object {
+            "ignore_above": 1024,
+            "type": "keyword",
+          },
           "name": Object {
+            "ignore_above": 1024,
             "type": "keyword",
           },
           "owner": Object {
+            "ignore_above": 1024,
             "type": "keyword",
           },
           "tags": Object {
+            "ignore_above": 1024,
             "type": "keyword",
           },
           "templateId": Object {
+            "ignore_above": 1024,
             "type": "keyword",
           },
           "templateVersion": Object {

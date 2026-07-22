@@ -409,70 +409,6 @@ export const CaseResponseClosedByProperties = lazySchema(() =>
 );
 export type CaseResponseClosedByProperties = z.infer<typeof CaseResponseClosedByProperties>;
 
-export const CaseResponseCreatedByProperties = lazySchema(() =>
-  z.object({
-    email: z.string().nullable(),
-    full_name: z.string().nullable(),
-    username: z.string().nullable(),
-    profile_uid: z.string().optional(),
-  })
-);
-export type CaseResponseCreatedByProperties = z.infer<typeof CaseResponseCreatedByProperties>;
-
-export const CaseResponsePushedByProperties = lazySchema(() =>
-  z
-    .object({
-      email: z.string().nullable(),
-      full_name: z.string().nullable(),
-      username: z.string().nullable(),
-      profile_uid: z.string().optional(),
-    })
-    .nullable()
-);
-export type CaseResponsePushedByProperties = z.infer<typeof CaseResponsePushedByProperties>;
-
-export const CaseResponseUpdatedByProperties = lazySchema(() =>
-  z
-    .object({
-      email: z.string().nullable(),
-      full_name: z.string().nullable(),
-      username: z.string().nullable(),
-      profile_uid: z.string().optional(),
-    })
-    .nullable()
-);
-export type CaseResponseUpdatedByProperties = z.infer<typeof CaseResponseUpdatedByProperties>;
-
-export const ActionsCommentResponseProperties = lazySchema(() =>
-  z.object({
-    actions: z
-      .object({
-        targets: z
-          .array(
-            z.object({
-              endpointId: z.string().optional(),
-              hostname: z.string().optional(),
-            })
-          )
-          .optional(),
-        type: z.string().optional(),
-      })
-      .optional(),
-    comment: z.string().optional(),
-    created_at: z.string().datetime().optional(),
-    created_by: CaseResponseCreatedByProperties.optional(),
-    id: z.string().optional(),
-    owner: Owner.optional(),
-    pushed_at: z.string().datetime().nullable().optional(),
-    pushed_by: CaseResponsePushedByProperties.optional(),
-    type: z.literal('actions'),
-    updated_at: z.string().datetime().nullable().optional(),
-    updated_by: CaseResponseUpdatedByProperties.optional(),
-    version: z.string().optional(),
-  })
-);
-export type ActionsCommentResponseProperties = z.infer<typeof ActionsCommentResponseProperties>;
-
 export const AlertCommentResponseProperties = lazySchema(() =>
   z.object({
     alertId: z.array(z.string()).optional(),
@@ -525,6 +461,40 @@ export const AlertCommentResponseProperties = lazySchema(() =>
   })
 );
 export type AlertCommentResponseProperties = z.infer<typeof AlertCommentResponseProperties>;
+
+export const CaseResponseCreatedByProperties = lazySchema(() =>
+  z.object({
+    email: z.string().nullable(),
+    full_name: z.string().nullable(),
+    username: z.string().nullable(),
+    profile_uid: z.string().optional(),
+  })
+);
+export type CaseResponseCreatedByProperties = z.infer<typeof CaseResponseCreatedByProperties>;
+
+export const CaseResponsePushedByProperties = lazySchema(() =>
+  z
+    .object({
+      email: z.string().nullable(),
+      full_name: z.string().nullable(),
+      username: z.string().nullable(),
+      profile_uid: z.string().optional(),
+    })
+    .nullable()
+);
+export type CaseResponsePushedByProperties = z.infer<typeof CaseResponsePushedByProperties>;
+
+export const CaseResponseUpdatedByProperties = lazySchema(() =>
+  z
+    .object({
+      email: z.string().nullable(),
+      full_name: z.string().nullable(),
+      username: z.string().nullable(),
+      profile_uid: z.string().optional(),
+    })
+    .nullable()
+);
+export type CaseResponseUpdatedByProperties = z.infer<typeof CaseResponseUpdatedByProperties>;
 
 export const EventCommentResponseProperties = lazySchema(() =>
   z.object({
@@ -640,7 +610,6 @@ export const CaseResponseProperties = lazySchema(() =>
     comments: z
       .array(
         z.discriminatedUnion('type', [
-          ActionsCommentResponseProperties,
           AlertCommentResponseProperties,
           EventCommentResponseProperties,
           UserCommentResponseProperties,
@@ -1132,6 +1101,124 @@ export const UpdateCaseConfigurationRequest = lazySchema(() =>
   })
 );
 export type UpdateCaseConfigurationRequest = z.infer<typeof UpdateCaseConfigurationRequest>;
+
+/**
+ * A case template (v2).
+ */
+export const TemplateV2Response = lazySchema(() =>
+  z.object({
+    /**
+     * The unique identifier of the template, shared across all versions.
+     */
+    templateId: z.string().max(36),
+    /**
+     * The display name of the template.
+     */
+    name: z.string().max(100),
+    /**
+     * The owning solution (e.g. cases, observability, securitySolution).
+     */
+    owner: z.string().max(50),
+    /**
+     * The parsed template definition.
+     */
+    definition: z.unknown(),
+    /**
+     * The raw YAML definition string.
+     */
+    definitionString: z.string().max(30000),
+    /**
+     * The version number of this template revision.
+     */
+    templateVersion: z.number().int(),
+    /**
+     * The date the template was soft-deleted, or null if active.
+     */
+    deletedAt: z.string().datetime().nullable(),
+    /**
+     * A human-readable description of the template.
+     */
+    description: z.string().max(30000).optional(),
+    tags: TemplateTags.optional(),
+    /**
+     * The username of the template author.
+     */
+    author: z.string().max(1000).optional(),
+    /**
+     * The number of times this template has been used to create a case.
+     */
+    usageCount: z.number().int().optional(),
+    /**
+     * The number of fields defined in the template.
+     */
+    fieldCount: z.number().int().optional(),
+    /**
+     * Metadata about each field defined in the template.
+     */
+    fieldDefinitions: z
+      .array(
+        z.object({
+          name: z.string().max(256),
+          label: z.string().max(256),
+          type: z.string().max(50),
+          control: z.string().max(50),
+        })
+      )
+      .optional(),
+    /**
+     * The date the template was last used to create a case.
+     */
+    lastUsedAt: z.string().datetime().optional(),
+    /**
+     * Whether this is the default template for its owner.
+     */
+    isDefault: z.boolean().optional(),
+    /**
+     * Whether this is the latest version of the template.
+     */
+    isLatest: z.boolean(),
+    /**
+     * Whether the template is enabled.
+     */
+    isEnabled: z.boolean().optional(),
+    /**
+     * The latest version number of this template.
+     */
+    latestVersion: z.number().int(),
+  })
+);
+export type TemplateV2Response = z.infer<typeof TemplateV2Response>;
+
+/**
+ * Response returned by the get all case templates API.
+ */
+export const GetCaseTemplatesResponse = lazySchema(() =>
+  z.object({
+    templates: z.array(
+      TemplateV2Response.merge(
+        z.object({
+          /**
+           * Whether the search query matched a field name in this template.
+           */
+          fieldSearchMatches: z.boolean(),
+        })
+      )
+    ),
+    /**
+     * The page number of the returned results.
+     */
+    page: z.number().int(),
+    /**
+     * The number of results per page.
+     */
+    perPage: z.number().int(),
+    /**
+     * The total number of templates matching the query.
+     */
+    total: z.number().int(),
+  })
+);
+export type GetCaseTemplatesResponse = z.infer<typeof GetCaseTemplatesResponse>;
 
 /**
   * Case details returned by the get case API. The comments property is not included in the response. Use the find case comments API to retrieve comments. totalComment reflects the actual number of user comments.

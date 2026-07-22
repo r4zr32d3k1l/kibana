@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import { partition, sum } from 'lodash';
+import { noop, partition, sum } from 'lodash';
 import agent from 'elastic-apm-node';
 
 import type { estypes } from '@elastic/elasticsearch';
@@ -114,6 +114,8 @@ export const createSecurityRuleTypeWrapper: CreateSecurityRuleTypeWrapper =
   }) =>
   (type) => {
     const { alertIgnoreFields: ignoreFields, alertMergeStrategy: mergeStrategy } = config;
+    // Rule preview must stay non-operational, similar to regular actions
+    const responseActionsService = isPreview ? noop : scheduleNotificationResponseActionsService;
     const persistenceRuleType = createPersistenceRuleTypeWrapper({
       ruleDataClient,
       logger,
@@ -195,6 +197,7 @@ export const createSecurityRuleTypeWrapper: CreateSecurityRuleTypeWrapper =
               ruleRevision: rule.revision,
               ruleType: rule.ruleTypeId,
               spaceId,
+              cpsData: options.cpsData,
             },
           });
 
@@ -427,7 +430,7 @@ export const createSecurityRuleTypeWrapper: CreateSecurityRuleTypeWrapper =
                     ignoreFieldsRegexes,
                     eventsTelemetry,
                     licensing,
-                    scheduleNotificationResponseActionsService,
+                    scheduleNotificationResponseActionsService: responseActionsService,
                   },
                 });
 
@@ -482,18 +485,19 @@ export const createSecurityRuleTypeWrapper: CreateSecurityRuleTypeWrapper =
             );
             const suppressedAlertsCount = result.suppressedAlertsCount ?? 0;
 
+            // Using Math.ceil() to prevent the event log from showing 0ms for sub-millisecond durations.
             ruleExecutionLogger.logMetrics({
               total_search_duration_ms:
                 result.searchAfterTimes.length > 0
-                  ? Math.round(sum(result.searchAfterTimes.map(Number)))
+                  ? Math.ceil(sum(result.searchAfterTimes.map(Number)))
                   : undefined,
               total_indexing_duration_ms:
                 result.bulkCreateTimes.length > 0
-                  ? Math.round(sum(result.bulkCreateTimes.map(Number)))
+                  ? Math.ceil(sum(result.bulkCreateTimes.map(Number)))
                   : undefined,
               total_enrichment_duration_ms:
                 result.enrichmentTimes.length > 0
-                  ? Math.round(sum(result.enrichmentTimes.map(Number)))
+                  ? Math.ceil(sum(result.enrichmentTimes.map(Number)))
                   : undefined,
               frozen_indices_queried_count: frozenIndicesQueriedCount,
               alerts_candidate_count: result.alertsCandidateCount,

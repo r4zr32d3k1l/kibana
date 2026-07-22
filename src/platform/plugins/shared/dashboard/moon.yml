@@ -68,7 +68,6 @@ dependsOn:
   - '@kbn/react-kibana-mount'
   - '@kbn/logging'
   - '@kbn/presentation-publishing'
-  - '@kbn/presentation-panel-plugin'
   - '@kbn/content-management-table-list-view-common'
   - '@kbn/shared-ux-utility'
   - '@kbn/core-test-helpers-model-versions'
@@ -111,7 +110,6 @@ dependsOn:
   - '@kbn/as-code-filters-schema'
   - '@kbn/as-code-filters-transforms'
   - '@kbn/scout'
-  - '@kbn/test'
   - '@kbn/core-chrome-app-menu-components'
   - '@kbn/core-chrome-app-menu'
   - '@kbn/test-jest-helpers'
@@ -121,6 +119,7 @@ dependsOn:
   - '@kbn/monaco'
   - '@kbn/code-editor'
   - '@kbn/as-code-shared-schemas'
+  - '@kbn/as-code-utils'
   - '@kbn/as-code-shared-transforms'
   - '@kbn/core-http-browser'
   - '@kbn/lens-common'
@@ -128,6 +127,10 @@ dependsOn:
   - '@kbn/dashboard-navigation-options-components'
   - '@kbn/dashboard-navigation-options-schema'
   - '@kbn/as-code-shared-telemetry'
+  - '@kbn/core-user-activity-server'
+  - '@kbn/core-test-helpers-test-utils'
+  - '@kbn/app-header'
+  - '@kbn/core-chrome-browser-hooks'
 tags:
   - plugin
   - prod

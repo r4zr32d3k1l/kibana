@@ -155,14 +155,24 @@ const createFilterFromRawColumnsESQL = async (
     http: getHttp(),
   });
 
-  // `column.name` can be a custom Lens label;
-  // `column.id` matches the ES|QL column / field used for lookup and filters
-  const fieldName = column.id;
+  // Prefer `sourceField` (index field name). Fall back to `column.name` when it is not a string
+  const sourceFieldName = column.meta?.sourceParams?.sourceField;
+  const fieldName = typeof sourceFieldName === 'string' ? sourceFieldName : column.name;
 
   const field = dataView.getFieldByName(fieldName);
 
   // Field should be present in the data view and filterable
   if (!field || !field.filterable) {
+    return [];
+  }
+
+  // A computed column (e.g. EVAL bytes = bytes * 2) can have the same name as a real,
+  // filterable field, so the check above isn't enough: fieldName would resolve to that
+  // unrelated field, but the value shown is the computed one, not the raw field's value.
+  if (
+    column.isComputedColumn === true &&
+    column.meta?.sourceParams?.isSourceFieldFilterable !== true
+  ) {
     return [];
   }
 

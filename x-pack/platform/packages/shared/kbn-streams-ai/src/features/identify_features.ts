@@ -14,7 +14,7 @@ import {
   type IgnoredFeature,
   identifiedFeatureSchema,
   ignoredFeatureSchema,
-} from '@kbn/streams-schema';
+} from '@kbn/significant-events-schema';
 import { withSpan } from '@kbn/apm-utils';
 import { conditionSchema, isConditionComplete, type Condition } from '@kbn/streamlang';
 import { createIdentifyFeaturesPrompt } from './prompt';
@@ -40,7 +40,7 @@ export const toPreviouslyIdentifiedFeature = (
   description: feature.description,
   properties: feature.properties,
 });
-export type { IgnoredFeature } from '@kbn/streams-schema';
+export type { IgnoredFeature } from '@kbn/significant-events-schema';
 
 export interface ExcludedFeatureSummary {
   id: string;
@@ -130,7 +130,7 @@ export async function identifyFeatures({
   return {
     features,
     ignoredFeatures,
-    tokensUsed: sumTokens({ prompt: 0, completion: 0, total: 0, cached: 0 }, response.tokens),
+    tokensUsed: sumTokens({ added: response.tokens }),
   };
 }
 

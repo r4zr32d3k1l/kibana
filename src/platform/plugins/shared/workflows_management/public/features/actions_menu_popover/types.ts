@@ -8,19 +8,33 @@
  */
 
 import type { EuiSelectableOption, IconType } from '@elastic/eui';
-import type { StepStabilityLevel } from '@kbn/workflows';
+import type { StabilityLevel } from '@kbn/workflows';
 
 export interface EditorCommand {
   id: string;
   label: string;
   iconType: IconType;
   description?: string;
+  shortcut?: string[];
 }
+
+export interface ActionSelectionOptions {
+  withParams?: Record<string, unknown>;
+}
+
+export type IconVariant =
+  | 'trigger'
+  | 'platform'
+  | 'external'
+  | 'flowControl'
+  | 'neutral'
+  | 'dataTransformation';
 
 export interface JumpToStepEntry {
   id: string;
   label: string;
   lineStart: number;
+  yaml?: string;
 }
 
 export type MenuItemData =
@@ -56,7 +70,8 @@ interface ActionBase {
   description?: string;
   instancesLabel?: string;
   iconColor?: string;
-  stability?: StepStabilityLevel;
+  iconVariant?: IconVariant;
+  stability?: StabilityLevel;
   /**
    * Ids from the root menu down through this row (for groups: path to open this group).
    * Set in `getActionOptions` for O(1) navigation when selecting from search.
