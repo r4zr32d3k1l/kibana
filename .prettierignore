@@ -1,2 +1,5 @@
 # use stylelint
 *.scss
+
+# standalone demo app with its own toolchain (not part of the Kibana workspace)
+/multipanels-demo
