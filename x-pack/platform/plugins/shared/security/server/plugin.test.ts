@@ -351,7 +351,7 @@ describe('Security Plugin', () => {
   });
 
   describe('serverless', () => {
-    const serverlessPlugin = (uiam?: Record<string, unknown>) => {
+    const serverlessPlugin = (uiam?: Record<string, unknown>, { dev = false } = {}) => {
       const context = coreMock.createPluginInitializerContext(
         ConfigSchema.validate(
           { encryptionKey: 'z'.repeat(32), ...(uiam ? { uiam } : {}) },
@@ -360,6 +360,8 @@ describe('Security Plugin', () => {
       );
       // Force type-cast to convert `ReadOnly<PackageInfo>` to mutable `PackageInfo`.
       (context.env.packageInfo as PackageInfo).buildFlavor = 'serverless';
+      // The mock context defaults to development mode; the UIAM requirement only applies outside it.
+      (context.env.mode as { dev: boolean }).dev = dev;
       return new SecurityPlugin(context);
     };
 
@@ -367,6 +369,12 @@ describe('Security Plugin', () => {
       expect(() => serverlessPlugin().setup(mockCoreSetup, mockSetupDependencies)).toThrow(
         '`xpack.security.uiam.enabled` must be `true` on serverless deployments.'
       );
+    });
+
+    it('setup() succeeds without UIAM in development mode', () => {
+      expect(() =>
+        serverlessPlugin(undefined, { dev: true }).setup(mockCoreSetup, mockSetupDependencies)
+      ).not.toThrow();
     });
 
     it('setup() succeeds when UIAM is enabled', () => {

@@ -296,7 +296,15 @@ export class SecurityPlugin
       this.initializerContext.env.packageInfo.buildFlavor === 'serverless' &&
       !config.uiam?.enabled
     ) {
-      throw new Error('`xpack.security.uiam.enabled` must be `true` on serverless deployments.');
+      // A local dev server can run in serverless mode against a stateful Elasticsearch, where
+      // there is no UIAM service to talk to (`node scripts/kibana --serverless --no-uiam`). Only
+      // real serverless deployments must have UIAM.
+      if (!this.initializerContext.env.mode.dev) {
+        throw new Error('`xpack.security.uiam.enabled` must be `true` on serverless deployments.');
+      }
+      this.logger.warn(
+        '`xpack.security.uiam.enabled` is `false`; continuing without UIAM because Kibana is running in development mode.'
+      );
     }
 
     const kibanaIndexName = this.getKibanaIndexName();
