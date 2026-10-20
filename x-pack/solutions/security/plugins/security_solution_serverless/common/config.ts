@@ -57,6 +57,18 @@ const commonConfigSchemaProps = {
    * This is used to disable the apps in the UI and prevent users from accessing them.
    */
   inaccessibleApps: schema.arrayOf(schema.string(), { defaultValue: [] }),
+  /**
+   * Demo / kiosk mode for the Security side navigation. When set, only the navigation nodes whose
+   * deep link id is listed stay clickable; every other node is still rendered with its icon and
+   * label but disabled. Unset (the default) leaves the navigation untouched.
+   *
+   * @example
+   * xpack.securitySolutionServerless.navigationAllowlist:
+   *   - 'securitySolutionUI:alerts'
+   *   - 'alertzero'
+   *   - 'agent_builder'
+   */
+  navigationAllowlist: schema.maybe(schema.arrayOf(schema.string(), { minSize: 1 })),
 };
 
 export const commonConfigSchema = schema.object(commonConfigSchemaProps);

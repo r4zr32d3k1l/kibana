@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import { of } from 'rxjs';
+import { firstValueFrom, of } from 'rxjs';
 import { AIChatExperience } from '@kbn/ai-assistant-common';
 import { WORKFLOWS_UI_SETTING_ID } from '@kbn/workflows/common/constants';
 import type { ProductLine, ProductTier } from '../../common/product';
@@ -122,6 +122,31 @@ describe('Security Side Nav', () => {
       AIChatExperience.Classic,
       true,
       false
+    );
+  });
+
+  it('disables every node outside the navigation allowlist', async () => {
+    mockedCreateNavigationTree.mockResolvedValueOnce({
+      body: [{ link: 'securitySolutionUI:alerts' }, { link: 'discover' }],
+      footer: [{ link: 'dev_tools' }],
+    });
+
+    await registerSolutionNavigation(services, [], {
+      navigationAllowlist: ['securitySolutionUI:alerts'],
+    });
+
+    const [, navigationTree$] = initNavigationSpy.mock.calls[0];
+    const navigationTree = await firstValueFrom(navigationTree$);
+
+    expect(navigationTree).toEqual({
+      body: [
+        { link: 'securitySolutionUI:alerts', isDisabled: false },
+        { link: 'discover', isDisabled: true },
+      ],
+      footer: [{ link: 'dev_tools', isDisabled: true }],
+    });
+    expect(services.securitySolution.setSolutionNavigationTree).toHaveBeenCalledWith(
+      navigationTree
     );
   });
 });

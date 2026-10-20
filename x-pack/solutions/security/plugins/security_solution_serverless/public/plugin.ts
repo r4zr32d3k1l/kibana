@@ -77,7 +77,7 @@ export class SecuritySolutionServerlessPlugin
     startDeps: SecuritySolutionServerlessPluginStartDeps
   ): SecuritySolutionServerlessPluginStart {
     const { securitySolution } = startDeps;
-    const { productTypes } = this.config;
+    const { productTypes, navigationAllowlist } = this.config;
     const services = createServices(core, startDeps, this.experimentalFeatures);
 
     startDeps.alertzero?.setServerlessTierAvailable(isAlertZeroAvailable(productTypes));
@@ -89,7 +89,9 @@ export class SecuritySolutionServerlessPlugin
     });
 
     setOnboardingSettings(services);
-    this.managementCardsSubscription = startNavigation(services, productTypes);
+    this.managementCardsSubscription = startNavigation(services, productTypes, {
+      navigationAllowlist,
+    });
 
     return {};
   }

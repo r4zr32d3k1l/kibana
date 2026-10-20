@@ -16,10 +16,17 @@ import type { SecurityProductTypes } from '../../common/config';
 import { type Services } from '../common/services';
 import { createAiNavigationTree } from './ai_navigation/ai_navigation_tree';
 import { createNavigationTree } from './navigation_tree';
+import { restrictNavigationTree } from './demo_navigation_restrictions';
+
+export interface SolutionNavigationOptions {
+  /** See `xpack.securitySolutionServerless.navigationAllowlist`. */
+  navigationAllowlist?: string[];
+}
 
 export const registerSolutionNavigation = async (
   services: Services,
-  productTypes: SecurityProductTypes
+  productTypes: SecurityProductTypes,
+  { navigationAllowlist }: SolutionNavigationOptions = {}
 ) => {
   const shouldUseAINavigation = productTypes.some(
     (productType) => productType.product_line === ProductLine.aiSoc
@@ -41,7 +48,7 @@ export const registerSolutionNavigation = async (
   const workflowsUiEnabled$ = services.settings.client.get$<boolean>(WORKFLOWS_UI_SETTING_ID);
   const workflowsUiEnabled = await firstValueFrom(workflowsUiEnabled$);
 
-  const navigationTree = shouldUseAINavigation
+  const fullNavigationTree = shouldUseAINavigation
     ? createAiNavigationTree(
         services,
         initialChatExperience,
@@ -49,6 +56,8 @@ export const registerSolutionNavigation = async (
         agentBuilderNavAtTop
       )
     : await createNavigationTree(services, initialChatExperience);
+
+  const navigationTree = restrictNavigationTree(fullNavigationTree, navigationAllowlist);
 
   services.securitySolution.setSolutionNavigationTree(navigationTree);
 

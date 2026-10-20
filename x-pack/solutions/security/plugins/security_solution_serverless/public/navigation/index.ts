@@ -9,16 +9,17 @@ import type { Subscription } from 'rxjs';
 import type { SecurityProductTypes } from '../../common/config';
 import type { Services } from '../common/services';
 import { subscribeBreadcrumbs } from './breadcrumbs';
-import { registerSolutionNavigation } from './navigation';
+import { registerSolutionNavigation, type SolutionNavigationOptions } from './navigation';
 import { enableManagementCardsLanding } from './management_cards';
 import { subscribeDashboardOnlyLanding } from './redirect_dashboard_only_landing';
 
 export const startNavigation = (
   services: Services,
-  productTypes: SecurityProductTypes
+  productTypes: SecurityProductTypes,
+  options?: SolutionNavigationOptions
 ): Subscription => {
   const landingSubscription = subscribeDashboardOnlyLanding(services);
-  registerSolutionNavigation(services, productTypes);
+  registerSolutionNavigation(services, productTypes, options);
   subscribeBreadcrumbs(services);
   const managementSubscription = enableManagementCardsLanding(services);
   landingSubscription.add(managementSubscription);
