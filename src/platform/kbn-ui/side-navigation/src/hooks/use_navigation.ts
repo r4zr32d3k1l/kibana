@@ -49,7 +49,8 @@ export const useNavigation = (
   const visuallyActivePageId = primaryItem?.id;
   const visuallyActiveSubpageId = secondaryItem?.id;
   const openerNode = primaryItem;
-  const isSidePanelOpen = !isCollapsed && !!openerNode?.sections;
+  // A disabled opener (reached by URL rather than by click) keeps its side panel closed.
+  const isSidePanelOpen = !isCollapsed && !!openerNode?.sections && !openerNode.isDisabled;
 
   const state: NavigationState = {
     actualActiveItemId,

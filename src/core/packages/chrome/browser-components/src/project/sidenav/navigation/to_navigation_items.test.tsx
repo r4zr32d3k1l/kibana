@@ -222,6 +222,51 @@ describe('empty panel opener', () => {
   });
 });
 
+describe('disabled nodes', () => {
+  it('propagates isDisabled to primary and secondary items, and only when set', () => {
+    const tree = structuredClone(navigationTree);
+    tree.body![1].isDisabled = true; // 'discover'
+    const rulesOpener = tree.body![3]; // 'securityGroup:rules' panel opener
+    rulesOpener.isDisabled = true;
+    rulesOpener.children![0].children![0].isDisabled = true; // 'rules'
+
+    const {
+      navItems: { primaryItems },
+    } = createNavigationItems(tree);
+
+    const discover = primaryItems.find((item) => item.id === 'discover');
+    expect(discover?.isDisabled).toBe(true);
+
+    const alerts = primaryItems.find((item) => item.id === 'alerts');
+    expect(alerts).not.toHaveProperty('isDisabled');
+
+    const rules = primaryItems.find((item) => item.id === 'securityGroup:rules');
+    expect(rules?.isDisabled).toBe(true);
+    // A disabled opener keeps its sections and href so it still renders as a full item.
+    expect(rules?.sections?.length).toBeGreaterThan(0);
+    expect(rules?.href).toBeTruthy();
+
+    const [rulesLink, benchmarksLink] = rules!.sections![0].items;
+    expect(rulesLink.id).toBe('rules');
+    expect(rulesLink.isDisabled).toBe(true);
+    expect(benchmarksLink).not.toHaveProperty('isDisabled');
+  });
+
+  it('skips disabled children when picking the href of a panel opener', () => {
+    const tree = structuredClone(navigationTree);
+    const rulesOpener = tree.body![3]; // 'securityGroup:rules' panel opener
+    const [firstChild, secondChild] = rulesOpener.children![0].children!;
+    firstChild.isDisabled = true;
+
+    const {
+      navItems: { primaryItems },
+    } = createNavigationItems(tree);
+
+    const rules = primaryItems.find((item) => item.id === 'securityGroup:rules');
+    expect(rules?.href).toBe(secondChild.href);
+  });
+});
+
 describe('hidden panel link', () => {
   // https://github.com/elastic/kibana/issues/240275
   it('should remove panel links marked as hidden, but should keep opener active', () => {

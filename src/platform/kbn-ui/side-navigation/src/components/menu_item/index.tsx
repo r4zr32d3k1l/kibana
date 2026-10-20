@@ -22,6 +22,10 @@ interface MenuItemBaseProps {
   iconType: IconType;
   id?: string;
   isCurrent?: boolean;
+  /**
+   * Renders a non-interactive `<button disabled>` (even when `href` is set) with muted colors.
+   */
+  isDisabled?: boolean;
   isHighlighted: boolean;
   isHorizontal?: boolean;
   isLabelVisible?: boolean;
@@ -56,6 +60,7 @@ export const MenuItem = forwardRef<HTMLAnchorElement | HTMLButtonElement, MenuIt
       iconType,
       id,
       isCurrent = false,
+      isDisabled = false,
       isHighlighted,
       isLabelVisible = true,
       isNew = false,
@@ -72,7 +77,9 @@ export const MenuItem = forwardRef<HTMLAnchorElement | HTMLButtonElement, MenuIt
     const iconWrapperClassName = `${NAVIGATION_SELECTOR_PREFIX}-iconWrapper`;
 
     const buttonStyles = css`
-      --menu-item-text-color: ${euiTheme.components.buttons.textColorText};
+      --menu-item-text-color: ${isDisabled
+        ? euiTheme.colors.textDisabled
+        : euiTheme.components.buttons.textColorText};
       --high-contrast-hover-indicator-color: var(--menu-item-text-color);
       ${useHighContrastModeStyles(`.${iconWrapperClassName}`)};
 
@@ -126,6 +133,14 @@ export const MenuItem = forwardRef<HTMLAnchorElement | HTMLButtonElement, MenuIt
 
       &:active .${iconWrapperClassName}::before {
         background-color: ${euiTheme.components.buttons.backgroundTextActive};
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+
+        .${iconWrapperClassName}::before {
+          background-color: transparent;
+        }
       }
     `;
 
@@ -183,6 +198,26 @@ export const MenuItem = forwardRef<HTMLAnchorElement | HTMLButtonElement, MenuIt
       'data-menu-item': true,
       'data-highlighted': isHighlighted ? 'true' : 'false',
     };
+
+    if (isDisabled) {
+      // A disabled link is not a thing in HTML, so the item becomes a disabled button whatever
+      // `href` was. `onClick` and the other anchor-only handlers are dropped with it.
+      const { href, ...disabledProps } = props as MenuItemWithHref;
+
+      return (
+        <button
+          id={id}
+          ref={ref as ForwardedRef<HTMLButtonElement>}
+          aria-disabled="true"
+          disabled
+          type="button"
+          {...commonProps}
+          {...(disabledProps as MenuItemButtonRestProps)}
+        >
+          {content}
+        </button>
+      );
+    }
 
     if (props.href === undefined) {
       const buttonProps = props as MenuItemWithoutHref;

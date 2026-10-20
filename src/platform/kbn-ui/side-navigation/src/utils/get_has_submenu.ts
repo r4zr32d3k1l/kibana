@@ -17,12 +17,16 @@ export const getPopoverSections = (item: MenuItem): SecondaryMenuSection[] | und
 
 /**
  * Whether the hover popover has content. `popoverSections` wins; otherwise `sections`.
+ * A disabled item never opens its popover.
  */
 export const getHasSubmenu = (item: MenuItem): boolean => {
+  if (item.isDisabled) return false;
   return (getPopoverSections(item)?.length ?? 0) > 0;
 };
 
 /**
  * Nested submenu in More. Tree `sections` only — hover `popoverSections` stay out.
+ * A disabled item never opens its nested panel.
  */
-export const getHasMoreSubmenu = (item: MenuItem): boolean => (item.sections?.length ?? 0) > 0;
+export const getHasMoreSubmenu = (item: MenuItem): boolean =>
+  !item.isDisabled && (item.sections?.length ?? 0) > 0;

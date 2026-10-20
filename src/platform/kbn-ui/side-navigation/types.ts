@@ -40,6 +40,10 @@ export interface SecondaryMenuItem {
    * (optional) Whether the link opens in a new tab.
    */
   isExternal?: boolean;
+  /**
+   * (optional) Render the item but make it non-interactive (no navigation, no submenu).
+   */
+  isDisabled?: boolean;
 }
 
 /**
@@ -108,6 +112,11 @@ export interface MenuItem {
    * Does not open the expanded side panel. Not shown in More.
    */
   popoverSections?: SecondaryMenuSection[];
+  /**
+   * (optional) Render the item but make it non-interactive: it neither navigates nor opens its
+   * popover / side panel.
+   */
+  isDisabled?: boolean;
 }
 
 /**

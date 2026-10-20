@@ -146,6 +146,7 @@ export const toNavigationItems = (
         isExternal: child.isExternalLink,
         'data-test-subj': getTestSubj(child),
         badgeType: child.badgeType,
+        ...(child.isDisabled && { isDisabled: true }),
       };
     };
 
@@ -222,6 +223,7 @@ export const toNavigationItems = (
       sections: secondarySections,
       'data-test-subj': getTestSubj(navNode),
       badgeType: navNode.badgeType,
+      ...(navNode.isDisabled && { isDisabled: true }),
     } as MenuItem;
   };
 
@@ -467,14 +469,14 @@ const findItemByLastActive = (
 };
 
 /**
- * Finds the first available href from secondary menu sections.
+ * Finds the first available href from secondary menu sections, skipping external and disabled items.
  * @param sections - The secondary menu sections to search in
  * @returns The first available href, or undefined if none found
  */
 const findFirstAvailableHref = (sections: SecondaryMenuSection[]): string | undefined => {
   for (const section of sections) {
     for (const item of section.items) {
-      if (item.href && !item.isExternal) {
+      if (item.href && !item.isExternal && !item.isDisabled) {
         return item.href;
       }
     }

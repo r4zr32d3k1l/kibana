@@ -159,6 +159,13 @@ interface NodeDefinitionCommon<LinkId extends AppDeepLinkId, Id extends string> 
    * (optional) The type of badge shown next to the item (e.g. `beta`, `techPreview`, `new`).
    */
   badgeType?: BadgeType;
+  /**
+   * (optional) Render the node in the side nav with its icon and label but make it non-interactive:
+   * it does not navigate, and a panel opener does not open its panel. Unlike `sideNavStatus: 'hidden'`
+   * the node stays visible, so a solution can show what exists without making it reachable.
+   * @default false
+   */
+  isDisabled?: boolean;
 }
 
 interface ChromeNavigationNodeCommon
