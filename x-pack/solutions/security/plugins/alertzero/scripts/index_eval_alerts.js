@@ -454,7 +454,9 @@ async function indexAlerts() {
       doc['kibana.alert.rule.rule_id'] = `eval-rule-${tmpl.ruleGroup}`;
     }
 
-    await esRequest('PUT', `/${INDEX}/_doc/${alertUuid}`, doc);
+    // `_create` works whether the alerts index is an alias or a data stream (data streams only
+    // accept `create` op types); UUIDs are fresh per run so it never collides.
+    await esRequest('PUT', `/${INDEX}/_create/${alertUuid}`, doc);
     indexed.push({
       id: alertUuid,
       label: tmpl.label,
