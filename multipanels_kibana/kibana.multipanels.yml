@@ -1,0 +1,87 @@
+# Kibana config for the "multipanels" Security demo.
+#
+# Loaded with `--config multipanels_kibana/kibana.multipanels.yml` on top of
+# `config/serverless.yml` + `config/serverless.security.yml` (+ the `complete` tier file), so this
+# file only holds what the demo changes. See multipanels_kibana/README.md.
+
+# --- Elasticsearch: stateful `node scripts/es snapshot` instead of a serverless ES container ------
+# Kibana itself still runs in `--serverless=security` mode. The dev CLI authenticates with the
+# `elastic/kibana/kibana-dev` service-account token that setup.sh installs into the ES config dir.
+elasticsearch.hosts: ['http://localhost:9200']
+elasticsearch.ignoreVersionMismatch: true
+
+# Basic auth at order 0 makes the dev CLI skip the mock-IdP SAML / UIAM setup, which needs a
+# serverless Elasticsearch. Login is elastic / changeme.
+xpack.security.authc.providers.basic.basic.order: 0
+xpack.security.authc.selector.enabled: false
+
+xpack.security.encryptionKey: 'multipanels-demo-security-encryption-key-0123456789'
+xpack.encryptedSavedObjects.encryptionKey: 'multipanels-demo-eso-encryption-key-0123456789abcd'
+xpack.reporting.encryptionKey: 'multipanels-demo-reporting-encryption-key-01234567'
+
+# --- Pages that stay live: Alerts, AlertZero, Agent Builder --------------------------------------
+# AlertZero: deployment kill switch + the per-space advanced setting + its runtime dependencies.
+xpack.alertzero.enabled: true
+xpack.agenticInvestigations.enabled: true
+xpack.proposals.enabled: true
+# AlertZero refuses to render unless service accounts are enabled (defaults to off on serverless).
+xpack.security.serviceAccounts.enabled: true
+
+uiSettings.overrides:
+  securitySolution:enableAlertZero: true
+  # Agent Builder (not the classic assistant) is the chat experience.
+  aiAssistant:preferredChatExperience: agent
+  agentBuilder:experimentalFeatures: true
+  # Land on Alerts instead of the onboarding page.
+  defaultRoute: /app/security/alerts
+
+# Only the three demo pages are real links in the Security side navigation; every other item is
+# rendered but disabled (see security_solution_serverless `navigation/demo_navigation_restrictions`).
+xpack.securitySolutionServerless.navigationAllowlist:
+  - 'securitySolutionUI:alerts'
+  - 'alertzero'
+  - 'alertzero:escalations'
+  - 'alertzero:watches'
+  - 'agent_builder'
+
+# --- Fake LLM ------------------------------------------------------------------------------------
+# A preconfigured OpenAI-compatible connector pointed at the canned mock server started by
+# setup.sh (multipanels_kibana/mock_llm_server.mjs). Agent Builder, AlertZero and the alert flyout's
+# AI features talk to it; no real model key is involved.
+xpack.actions.preconfigured:
+  multipanels-mock-llm:
+    name: Demo LLM (canned responses)
+    actionTypeId: .gen-ai
+    config:
+      apiProvider: OpenAI
+      apiUrl: http://localhost:18800/v1/chat/completions
+      defaultModel: gpt-4o
+    secrets:
+      apiKey: demo-key
+xpack.actions.allowedHosts: ['*']
+
+# --- Trim what the demo does not need ------------------------------------------------------------
+# `config/serverless.yml` already turns off canvas, monitoring, ccr, ilm, rollup, snapshot_restore,
+# upgrade_assistant, license_management, graph, watcher, screenshotting. The extra toggles below are
+# purely to speed up startup / page load. Nothing here contributes a Security side-nav item (those
+# plugins stay on so the items can render disabled).
+xpack.automatic_import.enabled: false
+xpack.contentConnectors.enabled: false
+xpack.streamsApp.enabled: false
+xpack.agentBuilderWorkflows.enabled: false
+xpack.indicesMetadata.enabled: false
+xpack.otelTelemetryCollection.enabled: false
+xpack.product_intercept.enabled: false
+telemetry.enabled: false
+telemetry.optIn: false
+newsfeed.enabled: false
+# No Fleet package install on startup (fleet_server metrics package is not needed here).
+xpack.fleet.packages: []
+
+# Quieter logs
+logging.root.level: warn
+logging.loggers:
+  - name: plugins.alertzero
+    level: info
+  - name: plugins.agentBuilder
+    level: info
